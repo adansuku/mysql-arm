@@ -1,19 +1,13 @@
 # 1. Define args usable during the pre-build phase
 # BUILD_ARCH: the docker architecture, with a tailing '/'. For instance, "arm64v8/"
 ARG BUILD_ARCH
-
-# Changed from original - end: don't inherit from debian:jessie, because mysql-server-5.7 don't exist on debian:jessie arm apt-get repo
 FROM ${BUILD_ARCH}ubuntu:bionic
-# Changed from original - end
-# Changed from original - start: add one line to override the maintainer
-MAINTAINER Brother In Arms <project.biarms@gmail.com>
-# Changed from original - end
+LABEL org.opencontainers.image.authors="adan.gonzalez@clickdimensions.com"
 
-# add our user and group first to make sure their IDs get assigned consistently, regardless of whatever dependencies get added
+# Add our user and group first to make sure their IDs get assigned consistently, regardless of whatever dependencies get added
 RUN groupadd -r mysql && useradd -r -g mysql mysql
 
-# Changed from original - start: upgrade to 1.12 (was inspired by https://github.com/rothgar/rpi-wordpress/blob/master/mysql/Dockerfile)
-# add gosu for easy step-down from root
+# Add gosu for easy step-down from root
 ENV GOSU_VERSION=1.12
 RUN set -x \
 	&& apt-get update && apt-get install -y --no-install-recommends ca-certificates wget gpg \
@@ -36,17 +30,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # File::Copy
 # Sys::Hostname
 # Data::Dumper
-		perl \
+	perl \
 	&& rm -rf /var/lib/apt/lists/*
-
-# RUN set -ex; \
-# # gpg: key 5072E1F5: public key "MySQL Release Engineering <mysql-build@oss.oracle.com>" imported
-# 	key='A4A9406876FCBD3C456770C88C718D3B5072E1F5'; \
-# 	export GNUPGHOME="$(mktemp -d)"; \
-# 	gpg --keyserver ha.pool.sks-keyservers.net --recv-keys "$key"; \
-# 	gpg --export "$key" > /etc/apt/trusted.gpg.d/mysql.gpg; \
-# 	rm -r "$GNUPGHOME"; \
-# 	apt-key list > /dev/null
 
 # Changed from original - start: MYSQL_VERSION and ENV MYSQL_MAJOR 5.7 are not used anymore
 # ENV MYSQL_MAJOR 5.7
@@ -100,13 +85,12 @@ ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
 RUN ln -fs /usr/share/zoneinfo/Europe/Paris /etc/localtime && apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y tzdata && rm -rf /var/lib/apt/lists/*
 # Changed from original - end
 
-
 EXPOSE 3306
 CMD ["mysqld"]
 
 # Changed from original: next line was added
 # (inspired by https://github.com/rothgar/rpi-wordpress/blob/master/mysql/Dockerfile)
-ADD my-small.cnf /etc/mysql/conf.d/my.cnf
+ADD mysql-conf.cnf /etc/mysql/conf.d/my.cnf
 
 ARG VCS_REF
 ARG BUILD_DATE
